@@ -1,0 +1,138 @@
+name: smcdel
+version: 1.2.0
+synopsis: Symbolic Model Checking for Dynamic Epistemic Logic
+description: See README.md and SMCDEL.pdf for references and documentation.
+maintainer: Malvin Gattinger <malvin@w4eg.eu>
+license: GPL-2
+github: jrclogic/SMCDEL
+category: Logic
+
+ghc-options: -Wall
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+  - stack.yaml
+  - package.yaml
+  - static/ace.js
+  - static/index.html
+  - static/viz-lite.js
+  - Examples/CherylsBirthday.smcdel.txt
+  - Examples/DiningCryptographers.smcdel.txt
+  - Examples/MuddyChildren.smcdel.txt
+  - Examples/DrinkingLogicians.smcdel.txt
+
+build-tools:
+  - alex
+  - happy
+
+library:
+  source-dirs:
+    - src
+  dependencies:
+    - base >= 4.8 && < 5
+    - array
+    - containers
+    - cudd == 0.1.0.0
+    - directory
+    - graphviz
+    - HasCacBDD >= 0.1.0.3 && < 0.2
+    - process
+    - QuickCheck
+    - tagged
+    - temporary
+    - text
+    - time
+
+executables:
+  smcdel:
+    source-dirs: exec
+    main: smcdel.hs
+    other-modules: Paths_smcdel
+    dependencies:
+      - base >= 4.8 && < 5
+      - ansi-terminal
+      - directory
+      - filepath
+      - process
+      - smcdel
+  smcdel-web:
+    source-dirs: exec
+    main: smcdel-web.hs
+    ghc-options: -threaded
+    dependencies:
+      - base >= 4.8 && < 5
+      - deepseq
+      - file-embed
+      - scotty
+      - HasCacBDD >= 0.1.0.1 && < 0.2
+      - js-jquery >= 3
+      - smcdel
+      - template-haskell
+      - text
+      - warp
+
+tests:
+  examples:
+    main: test/Examples.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - HasCacBDD
+      - hspec
+      - QuickCheck
+      - smcdel
+  translations:
+    main: test/Translations.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - hspec
+      - smcdel
+  k:
+    main: test/K.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - containers
+      - hspec
+      - QuickCheck
+      - smcdel
+  web:
+    main: test/Web.hs
+    dependencies:
+      - base
+      - process
+      - sandwich
+      - sandwich-webdriver
+      - text
+      - webdriver
+
+benchmarks:
+  bench-diningcrypto:
+    source-dirs: bench
+    main: diningcrypto.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - smcdel
+      - time
+
+  bench-sumandproduct:
+    source-dirs: bench
+    main: sumandproduct.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - criterion
+      - smcdel
+      - time
+
+  bench-muddychildren:
+    source-dirs: bench
+    main: muddychildren.hs
+    dependencies:
+      - base >= 4.8 && < 5
+      - bytestring
+      - cassava
+      - criterion
+      - directory
+      - scientific
+      - smcdel
+      - split
+      - vector

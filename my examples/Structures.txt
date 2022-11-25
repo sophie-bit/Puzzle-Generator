@@ -1,0 +1,23 @@
+-- Cheryls Birthday in SMCDEL
+
+-- 2x2
+months = [1,2]  --moet nog random
+days = [14,15]  --moet nog random
+
+VARS months           -- month
+     days  -- day of the month
+
+LAW  AND (
+  -- birthday is one of these ten possibilities:
+  OR ( (15 & 5), (16 & 5) , (19 & 5) ),
+  -- month must be unique:
+  AND ( ~(1 & 2)),
+  -- days must be unique:
+  AND ( ~(14 & 15)
+      )
+  )
+
+OBS  albert: months          -- knows month
+     bernard: days -- knows day
+
+
