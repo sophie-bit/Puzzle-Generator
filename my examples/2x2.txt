@@ -19,20 +19,36 @@ OBS  albert:  5,6            -- knows month
 WHERE?
   Top
 
+WHERE?
+   ~ OR ( albert knows that (14 & 5), albert knows that (15 & 5)
+            , albert knows that (14 & 6))
+
 -- the dialogue
 WHERE?
    -- Albert: I don't know when Cheryl's birthday is, ...
-   < ! ~ OR ( albert knows that (14 & 5), albert knows that (15 & 5)
+   (
+   < ! ~ OR ( albert knows that (14 & 5), albert knows that (15 &
+   5)
             , albert knows that (14 & 6)) >
-   -- Bernard: I didn't know Cheryl's birthday is.
-   < ! ~ ( bernard knows that (
-         ~( OR ( bernard knows that (14 & 5), bernard knows that (14 & 5)
-               , bernard knows that (14 & 6)) ) ) ) >
-   -- ... but now I know when Cheryl's birthday is.
-   < ! OR ( bernard knows that (14 & 5), bernard knows that (15 & 5)
-          , bernard knows that (14 & 6)) >
-   -- Albert: Then I also know when Cheryl's birthday is.
-   < ! OR ( albert knows that (14 & 5), albert knows that (15 & 5)
-          , albert knows that (14 & 6)) >
-   -- (show all states where these announcements can be made in this order)
    Top
+   )
+   &
+   -- Bernard: I didn't know Cheryl's birthday is.
+   ~ ( OR ( bernard knows that (14 & 5)
+          , bernard knows that (15 & 5)
+          , bernard knows that (14 & 6)) )
+
+WHERE?
+   -- Albert: but now ...
+      < ! ( ~ OR ( albert knows that (14 & 5)
+                 , albert knows that (15 & 5)
+                 , albert knows that (14 & 6))
+          )
+          &
+          ( ~ OR ( bernard knows that (14 & 5)
+                 , bernard knows that (15 & 5)
+                 , bernard knows that (14 & 6)) ) >
+   -- ... I also know when Cheryl's birthday is:
+    OR ( albert knows that (14 & 5)
+       , albert knows that (15 & 5)
+       , albert knows that (14 & 6) )
