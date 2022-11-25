@@ -3,7 +3,7 @@
 VARS 5,6,7,           -- month
      14,15,16  -- day of the month
 
-LAW  AND (
+LAW  AND ( -- test
   -- birthday is one of these ten possibilities:
   OR ( (14 & 5), (15 & 5), (16 & 5)
      , (14 & 6), (15 & 6), (16 & 7)
