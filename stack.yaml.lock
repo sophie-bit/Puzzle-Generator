@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: smcdel-1.2.0@sha256:626f7daa9e15631eb37c43cbd4a24a45de90ecc579a9f84d21ead1fdd9526cb3,5552
+    pantry-tree:
+      sha256: 5e38672b1c7aae3115f1c949cd6ebade0d07a0dd7a12c6fa8254bcf86bda6d74
+      size: 4226
+  original:
+    hackage: smcdel-1.2.0@sha256:626f7daa9e15631eb37c43cbd4a24a45de90ecc579a9f84d21ead1fdd9526cb3,5552
+- completed:
     commit: 32f7d6b764a80bbf8f84c07e2c1d691469aaaba0
     git: https://github.com/m4lvin/cudd.git
     name: cudd
@@ -27,4 +34,5 @@ snapshots:
     sha256: ce4fb8d44f3c6c6032060a02e0ebb1bd29937c9a70101c1517b92a87d9515160
     size: 586110
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/21.yaml
-  original: lts-18.21
+  original:
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/21.yaml

@@ -1,3 +1,10 @@
+module PuzzleGen where
+
+import Test.QuickCheck
+
+import SMCDEL.Language
+import SMCDEL.Symbolic.S5
+
 newtype PuzzleKnS = Puzzle KnowStruct deriving (Eq, Show)
 
 instance Arbitrary PuzzleKnS where
@@ -7,8 +14,7 @@ instance Arbitrary PuzzleKnS where
     extraMonths <- sublistOf $ map P [3..4] -- FIXME: increase?
     let months = [P 1, P 2] ++ extraMonths
     let myVocabulary = months ++ days
-    possibilities <- sublistOf [ Conj [PrpF d, PrpF m] | d <-
-    days, m <- months ] -- FIXME not empty!
+    possibilities <- sublistOf [ Conj [PrpF d, PrpF m] | d <- days, m <- months ] -- FIXME not empty!
     let statelaw = Conj
                        [ Disj possibilities
                        , Conj [ Neg $ Conj [PrpF d1, PrpF d2] | d1
