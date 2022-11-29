@@ -23,7 +23,8 @@ source-repository head
 
 library
   exposed-modules:
-      PuzzleGen
+      PuzzleGenE
+      PuzzleGenS
   other-modules:
       Paths_puzzlegen
   hs-source-dirs:
