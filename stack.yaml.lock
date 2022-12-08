@@ -5,12 +5,16 @@
 
 packages:
 - completed:
-    hackage: smcdel-1.2.0@sha256:626f7daa9e15631eb37c43cbd4a24a45de90ecc579a9f84d21ead1fdd9526cb3,5552
+    commit: b20eeaac9900879b1636fba9a0968a80de4eb1c6
+    git: https://github.com/jrclogic/SMCDEL.git
+    name: smcdel
     pantry-tree:
-      sha256: 5e38672b1c7aae3115f1c949cd6ebade0d07a0dd7a12c6fa8254bcf86bda6d74
-      size: 4226
+      sha256: 1242aa8c94448ad4db52a4e572f2ec9253ffcfbbac3704f4af413724b2c7e994
+      size: 4433
+    version: 1.2.0
   original:
-    hackage: smcdel-1.2.0@sha256:626f7daa9e15631eb37c43cbd4a24a45de90ecc579a9f84d21ead1fdd9526cb3,5552
+    commit: b20eeaac9900879b1636fba9a0968a80de4eb1c6
+    git: https://github.com/jrclogic/SMCDEL.git
 - completed:
     commit: 32f7d6b764a80bbf8f84c07e2c1d691469aaaba0
     git: https://github.com/m4lvin/cudd.git

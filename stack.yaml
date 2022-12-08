@@ -5,7 +5,8 @@ packages:
 - .
 
 extra-deps:
-- smcdel-1.2.0@sha256:626f7daa9e15631eb37c43cbd4a24a45de90ecc579a9f84d21ead1fdd9526cb3,5552
+- git: https://github.com/jrclogic/SMCDEL.git
+  commit: b20eeaac9900879b1636fba9a0968a80de4eb1c6
 - git: https://github.com/m4lvin/cudd.git
   commit: 32f7d6b764a80bbf8f84c07e2c1d691469aaaba0
 - HasCacBDD-0.1.0.3
