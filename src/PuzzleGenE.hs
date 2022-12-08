@@ -30,8 +30,10 @@ myArbitrary n = do
     let days = take numMD $ map P  allDays
     let myVocabulary = months ++ days
 
-    posDates <- shuffle [(x,y) | x<-months, y<-days]
-    let dates = zip [1..] $ take numDates posDates
+    let posDates = zip [1..] [(x,y) | x<-months, y<-days]
+    let dates = if n ==3
+                then map (posDates !!) [0,1,2]
+                else map (posDates !!) [0,1,4,5,8]
 
     let datesM = map (map fst) $ groupBy (\ (_,(m1,_)) (_,(m2,_)) -> m1 == m2) $ sortBy (\ (_,(m1,_)) (_,(m2,_)) -> compare m1 m2) dates
     let datesD = map (map fst) $ groupBy (\ (_,(_,d1)) (_,(_,d2)) -> d1 == d2) $ sortBy (\ (_,(_,d1)) (_,(_,d2)) -> compare d1 d2) dates
@@ -49,13 +51,25 @@ run n = do
   Puzzle2 k <- (generate (myArbitrary n) :: IO PuzzleKrMS5)
   print k
   disp k
-  let newk = k `update` Conj [ albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k) ]
+  let notK = k `update` Conj [ albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k) ]
+  disp notK
+  print notK
+  let bK = notK `update` bernardDoesKnow (vocabOf notK)
+  print bK
+  disp bK
+  let abK = bK `update` albertDoesKnow (vocabOf bK)
+  print abK
+  print abK
 
-  print newk
-  disp newk
-  
+
 albertDoesNotKnow :: [Prp] -> Form
 albertDoesNotKnow ps = Conj [ Neg (K "Albert" (PrpF p)) | p <- ps, p > P 12 ]
 
 bernardDoesNotKnow :: [Prp] -> Form
 bernardDoesNotKnow ps = Conj [ Neg (K "Bernard" (PrpF p)) | p <- ps, p < P 13 ]
+
+albertDoesKnow :: [Prp] -> Form
+albertDoesKnow ps = Conj [ Kw "Albert" (PrpF p) | p <- ps]
+
+bernardDoesKnow :: [Prp] -> Form
+bernardDoesKnow ps = Conj [ Kw "Bernard" (PrpF p) | p <- ps]
