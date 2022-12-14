@@ -1,0 +1,5 @@
+KrMS5 [1,2,3,4,5] [("Albert",[[4],[1,2,3],[5]]),("Bernard",[[3,4,5],[2],[1]])] [(1,[(P 7,False),(P 3,True),(P 2,False),(P 18,False),(P 20,True),(P 19,False)]),(2,[(P 7,False),(P 3,True),(P 2,False),(P 18,False),(P 20,False),(P 19,True)]),(3,[(P 7,False),(P 3,True),(P 2,False),(P 18,True),(P 20,False),(P 19,False)]),(4,[(P 7,False),(P 3,False),(P 2,True),(P 18,True),(P 20,False),(P 19,False)]),(5,[(P 7,True),(P 3,False),(P 2,False),(P 18,True),(P 20,False),(P 19,False)])]
+
+KrMS5 [3] [("Albert",[[3]]),("Bernard",[[3]])] [(3,[(P 7,False),(P 3,True),(P 2,False),(P 18,True),(P 20,False),(P 19,False)])]
+
+KrMS5 [3] [("Albert",[[3]]),("Bernard",[[3]])] [(3,[(P 7,False),(P 3,True),(P 2,False),(P 18,True),(P 20,False),(P 19,False)])]
