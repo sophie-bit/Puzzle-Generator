@@ -43,16 +43,19 @@ run :: Int -> Int -> Int -> IO ()
 run m d p = do
   Puzzle2 k <- (generate (myArbitrary m d p) :: IO PuzzleKrMS5)
   let val = map (map fromEnum . truthsInAt k) (worldsOf k)
-  intro p val
-  disp k
   let abKn = k `update` Conj [ albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k) ]
   let bK = abKn `update` bernardDoesKnow (vocabOf abKn)
   let aK = bK `update` bernardDoesKnow (vocabOf bK)
-  dialogue "abKn"
-  dialogue "aK"
   let newval = map (map fromEnum . truthsInAt bK) (worldsOf bK)
-  _ <- tryToGuess newval
-  disp aK
+  if length newval /= 1
+    then putStrLn "ERROR: There is no solution"
+  else do 
+    intro p val
+    disp k
+    dialogue "abKn"
+    dialogue "aK"
+    _ <- tryToGuess newval
+    disp aK
 
 
 albertDoesNotKnow :: [Prp] -> Form
@@ -92,24 +95,21 @@ dialogue a = do
 
 tryToGuess :: [[Int]] -> IO Bool
 tryToGuess s = do
-  if length s == 1
-  then do putStrLn "\nWhen is Cheryl's birthday?"
-          input <- getLine
-          case readMaybe input of 
-            Nothing -> do 
-              putStrLn "Please use the following format: [m,d]"
-              tryToGuess s
-            Just n -> do
-              if n == head s
-                then do putStrLn "Correct!"
-                        return True
-                else do putStrLn "Incorrect. Do you want to try again?"
-                        a <- tryAgain
-                        if a 
-                        then tryToGuess s
-                        else return False
-    else do putStrLn "ERROR: There is no solution"   
-            return False 
+  putStrLn "\nWhen is Cheryl's birthday?"
+  input <- getLine
+  case readMaybe input of 
+    Nothing -> do 
+      putStrLn "Please use the following format: [m,d]"
+      tryToGuess s
+    Just n -> do
+      if n == head s
+        then do putStrLn "Correct!"
+                return True
+        else do putStrLn "Incorrect. Do you want to try again?"
+                a <- tryAgain
+                if a 
+                then tryToGuess s
+                else return False
 
 tryAgain :: IO Bool
 tryAgain = do 
