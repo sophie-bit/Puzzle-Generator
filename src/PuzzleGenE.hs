@@ -47,11 +47,12 @@ run m d p = do
   disp k
   let abKn = k `update` Conj [ albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k) ]
   let bK = abKn `update` bernardDoesKnow (vocabOf abKn)
+  let aK = bK `update` bernardDoesKnow (vocabOf bK)
   dialogue "abKn"
   dialogue "aK"
   let newval = map (map fromEnum . truthsInAt bK) (worldsOf bK)
   _ <- tryToGuess newval
-  disp bK
+  disp aK
 
 
 albertDoesNotKnow :: [Prp] -> Form
