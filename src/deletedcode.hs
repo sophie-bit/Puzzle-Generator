@@ -1,6 +1,22 @@
 -- instance Arbitrary PuzzleKrMS5 where
 --   arbitrary = myArbitrary
 
+
+    -- Choose parameters puzzle
+    -- let mon 
+    --       | diff == Easy = chooseInt(2,3)
+    --       | diff == Medium = chooseInt(4,6)
+    --       | otherwise = chooseInt(7,12)
+    -- let day
+    --       | diff == Easy = chooseInt(2,3)
+    --       | diff == Medium = chooseInt(4,6)
+    --       | otherwise = chooseInt(7,16)
+    -- let dat
+    --       | diff == Easy = chooseInt(2,mon*day)
+    --       | diff == Medium = chooseInt(7,mon*day)
+    --       | otherwise = chooseInt(12,mon*day)
+
+
 updatesK :: KripkeModelS5 -> [[[Int]]]
 updatesK k = do
   ups <- chooseInt(0,7)

@@ -3,7 +3,7 @@ module PuzzleGenE where
 import Test.QuickCheck
     -- ( generate, shuffle, Arbitrary(arbitrary), Gen, chooseInt )
 
-import SMCDEL.Language 
+import SMCDEL.Language
 import SMCDEL.Internal.TexDisplay
 import SMCDEL.Explicit.S5 ( KripkeModelS5(..), World, worldsOf)  --world, worldOf)
 import Data.List (groupBy, sortBy, sort)
@@ -12,17 +12,32 @@ import Text.Read(readMaybe)
 
 newtype PuzzleKrMS5 = Puzzle2 KripkeModelS5 deriving (Eq,Ord,Show)
 
+instance Arbitrary PuzzleKrMS5 where
+  arbitrary = myArbitrary Easy
+
 -- Gen KripkeModel
-myArbitrary :: Gen PuzzleKrMS5
-myArbitrary = do
-    -- Choose parameters puzzle
-    mon <- chooseInt(2,12)
-    day <- chooseInt(2, 16)
-    dat <- chooseInt(3, mon*day)
+myArbitrary :: Diffuculty -> Gen PuzzleKrMS5
+myArbitrary diff = do
+    mon <- if diff == Easy 
+            then chooseInt(2,3)
+           else if diff == Medium
+            then  chooseInt(4,6)
+           else chooseInt(7,12)      
+    day <- if diff == Easy 
+            then chooseInt(2,3)
+           else if diff == Medium
+            then  chooseInt(4,6)
+           else chooseInt(7,16)   
+    dat <- if diff == Easy 
+            then chooseInt(2, mon*day)
+           else if diff == Medium
+            then  chooseInt(7,mon*day)
+           else chooseInt(12, mon*day)   
+
     -- Choose specific months
-    allMonths <- shuffle [1..12]    
+    allMonths <- shuffle [1..12]
     allDays <- shuffle [13..28]
-    let months = take mon $ map P allMonths   
+    let months = take mon $ map P allMonths
     let days = take day $ map P  allDays
     let myVocabulary = months ++ days
 
@@ -31,53 +46,56 @@ myArbitrary = do
     let dates = zip [1..] $ take dat posDates
     let datesM = map (map fst) $ groupBy (\ (_,(m1,_)) (_,(m2,_)) -> m1 == m2) $ sortBy (\ (_,(m1,_)) (_,(m2,_)) -> compare m1 m2) dates
     let datesD = map (map fst) $ groupBy (\ (_,(_,d1)) (_,(_,d2)) -> d1 == d2) $ sortBy (\ (_,(_,d1)) (_,(_,d2)) -> compare d1 d2) dates
-    
+
     let worlds = map fst dates
     let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- myVocabulary ])) dates
     let parts = [("Albert", datesM), ("Bernard", datesD)]
     return $ Puzzle2 $ KrMS5 worlds parts val
 
 
-run :: IO ()
-run = do 
+run :: Diffuculty -> IO ()
+run diff = do
   -- Generate KrMS5 with solution
-  (k, p, posB, sol) <- tryFindSol
+  (k, p, posB, sol) <- tryFindSol diff 
   -- Dialogue
   intro p posB
-  if p < 7 
+  if p < 7
     then dialogue AKn
   else dialogue AKB
   dialogue BK
   dialogue AK
   disp k
   -- let player guess
+  print sol
   _ <- tryToGuess sol
   putStrLn "Thankyou for playing :)"
 
 
+data Diffuculty = Easy | Medium | Hard deriving (Eq,Ord,Show)
+
   -- Find KrMS5 with solution
-  
-tryFindSol :: IO (KripkeModelS5, Int, [[Int]], [[Int]])
-tryFindSol = do
+
+tryFindSol :: Diffuculty -> IO (KripkeModelS5, Int, [[Int]], [[Int]])
+tryFindSol diff = do
     -- Generate random KrMS5
-    Puzzle2 k <- generate myArbitrary
+    Puzzle2 k <- generate (myArbitrary diff)
     -- Possible birthdays 
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)
-    let p = length posB 
-    
+    let p = length posB
+
     -- Excute updates
     let aKB = if p < 7
         then k `update` Conj [albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k)]
         else k `update` Conj [albertDoesNotKnow (vocabOf k), albertKwBernard (vocabOf k)]
     let bK = aKB `update` bernardKnows (vocabOf aKB)
-    let aK = bK `update` albertKnows (vocabOf bK)    
+    let aK = bK `update` albertKnows (vocabOf bK)
 
     -- Check if there is 1 solution
     let sol = map (map fromEnum . truthsInAt aK) (worldsOf aK)
     if length sol == 1
       then return (k, p, posB, sol)
-    else tryFindSol 
-      
+    else tryFindSol diff
+
 
 -- Dialogue 
 
@@ -91,12 +109,12 @@ intro p v = do
 data Dialogue = AKn | AKB | BKA | AK | BK deriving (Eq,Ord,Show)
 
 dialogue :: Dialogue -> IO ()
-dialogue a = do  
+dialogue a = do
   if a == AKn
   then putStrLn "Albert: “I don't know when Cheryl's birthday is.”"
-  else if a == AKB 
+  else if a == AKB
   then putStrLn "Albert: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
-  else if a == BKA 
+  else if a == BKA
   then putStrLn "Bernard: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
   else if a == BK
   then putStrLn "Bernard: “At first I didn't know when Cheryl's birthday is, but now I do!”"
@@ -111,8 +129,8 @@ tryToGuess :: [[Int]] -> IO Bool
 tryToGuess s = do
   putStrLn "\nWhen is Cheryl's birthday?"
   input <- getLine
-  case readMaybe input of 
-    Nothing -> do 
+  case readMaybe input of
+    Nothing -> do
       putStrLn "Please use the following format: [m,d]"
       tryToGuess s
     Just n -> do
@@ -121,9 +139,9 @@ tryToGuess s = do
                 return True
         else do putStrLn "Incorrect. Do you want to try again?"
                 a <- tryAgain
-                if a 
+                if a
                 then tryToGuess s
-                else do 
+                else do
                   putStrLn $ "The correct answer is: " ++ show (head s)
                   return False
 
