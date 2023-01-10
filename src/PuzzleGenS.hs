@@ -1,20 +1,19 @@
 module PuzzleGenS where
 
 import Test.QuickCheck
-
 import SMCDEL.Language 
-import SMCDEL.Internal.TexDisplay()
-import SMCDEL.Explicit.S5()
 import SMCDEL.Symbolic.S5
+-- import SMCDEL.Internal.TexDisplay()
+-- import SMCDEL.Explicit.S5()
 
 newtype PuzzleKnS = Puzzle KnowStruct deriving (Eq, Show)
 
 instance Arbitrary PuzzleKnS where
   arbitrary = do
-    extraDays <- sublistOf $ map P [15..16] -- FIXME: increase?
-    let days = [P 13, P 14] ++ extraDays 
-    extraMonths <- sublistOf $ map P [3..4] -- FIXME: increase?
-    let months = [P 1, P 2] ++ extraMonths
+    -- extraDays <- sublistOf $ map P [15..16] -- FIXME: increase?
+    let days = [P 13, P 14]
+    -- extraMonths <- sublistOf $ map P [3..4] -- FIXME: increase?
+    let months = [P 1, P 2] 
     let myVocabulary = months ++ days
     
     possibilities <- sublistOf [ Conj [PrpF d, PrpF m] | d <- days, m <- months ] -- FIXME not empty!

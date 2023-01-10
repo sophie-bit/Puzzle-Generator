@@ -19,13 +19,13 @@ myArbitrary :: Int -> Gen PuzzleKrMS5
 myArbitrary n = do
     let num_Children = n   
     let myVocabulary = map P [1..num_Children]
+    let posVal= allPropositions myVocabulary
     
-    let possibilities = allPropositions myVocabulary
     
-    let worlds = [0..(length possibilities - 1)]
+    let worlds = [0..(length posVal - 1)]
 
     val <- mapM (\w -> do 
-      let myAssignment = possibilities !! w
+      let myAssignment = posVal !! w
       return (w, myAssignment) 
       ) worlds
 
@@ -39,10 +39,6 @@ run n = do
   Muddy k <- (generate (myArbitrary n) :: IO PuzzleKrMS5)
   print k
   disp k
---   let newk = k `update` albertDoesNotKnow (vocabOf k)
-
---   print newk
---   disp newk
 
 allPropositions :: [a] -> [[(a, Bool)]]
 allPropositions = foldr (\x xs -> (:) <$> [(x,True),(x,False)] <*> xs) [[]]
