@@ -66,7 +66,6 @@ run diff = do
   dialogue AK
   disp k
   -- let player guess
-  print sol
   _ <- tryToGuess sol
   putStrLn "Thankyou for playing :)"
 
