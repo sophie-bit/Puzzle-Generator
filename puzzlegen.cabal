@@ -23,9 +23,7 @@ source-repository head
 
 library
   exposed-modules:
-      MuddyChildren
-      PuzzleGenE
-      PuzzleGenS
+      PuzzleGen
   other-modules:
       Paths_puzzlegen
   hs-source-dirs:
