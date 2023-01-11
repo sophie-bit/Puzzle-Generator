@@ -16,7 +16,7 @@ instance Arbitrary PuzzleKrMS5 where
   arbitrary = myArbitrary Easy
 
 -- Gen KripkeModel
-myArbitrary :: Diffuculty -> Gen PuzzleKrMS5
+myArbitrary :: Difficulty -> Gen PuzzleKrMS5
 myArbitrary diff = do
     mon <- if diff == Easy 
             then chooseInt(2,3)
@@ -53,28 +53,26 @@ myArbitrary diff = do
     return $ Puzzle2 $ KrMS5 worlds parts val
 
 
-run :: Diffuculty -> IO ()
+run :: Difficulty -> IO ()
 run diff = do
   -- Generate KrMS5 with solution
   (k, p, posB, sol) <- tryFindSol diff 
   -- Dialogue
   intro p posB
   if p < 7
-    then dialogue AKn
-  else dialogue AKB
-  dialogue BK
-  dialogue AK
+    then dia [AKn, BAK]
+  else dia [AKB, BAK]
   disp k
   -- let player guess
   _ <- tryToGuess sol
-  putStrLn "Thankyou for playing :)"
+  putStrLn "Thank you for playing :)"
 
 
-data Diffuculty = Easy | Medium | Hard deriving (Eq,Ord,Show)
+data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
 
   -- Find KrMS5 with solution
 
-tryFindSol :: Diffuculty -> IO (KripkeModelS5, Int, [[Int]], [[Int]])
+tryFindSol :: Difficulty -> IO (KripkeModelS5, Int, [[Int]], [[Int]])
 tryFindSol diff = do
     -- Generate random KrMS5
     Puzzle2 k <- generate (myArbitrary diff)
@@ -82,15 +80,12 @@ tryFindSol diff = do
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)
     let p = length posB
 
-    -- Excute updates
-    let aKB = if p < 7
-        then k `update` Conj [albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k)]
-        else k `update` Conj [albertDoesNotKnow (vocabOf k), albertKwBernard (vocabOf k)]
-    let bK = aKB `update` bernardKnows (vocabOf aKB)
-    let aK = bK `update` albertKnows (vocabOf bK)
+    let nK = if p < 7 
+              then kups k [UABKn, UBK, UAK]
+             else kups k [UAKB, UBK, UAK]
 
     -- Check if there is 1 solution
-    let sol = map (map fromEnum . truthsInAt aK) (worldsOf aK)
+    let sol = map (map fromEnum . truthsInAt nK) (worldsOf nK)
     if length sol == 1
       then return (k, p, posB, sol)
     else tryFindSol diff
@@ -105,21 +100,42 @@ intro p v = do
   putStrLn $ unwords . map show $ sort v
   putStrLn "\nCheryl then tells only to Albert the month of her birthday, and tells only to Bernard the day of her birthday. (And Albert and Bernard are aware that she did so.) Albert and Bernard now have the following conversation:\n"
 
-data Dialogue = AKn | AKB | BKA | AK | BK deriving (Eq,Ord,Show)
+data Dialogue = AKn | BKn | AKB | BKA | BAK | ABK  deriving (Eq,Ord,Show)
 
-dialogue :: Dialogue -> IO ()
-dialogue a = do
-  if a == AKn
-  then putStrLn "Albert: “I don't know when Cheryl's birthday is.”"
-  else if a == AKB
-  then putStrLn "Albert: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
-  else if a == BKA
-  then putStrLn "Bernard: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
-  else if a == BK
-  then putStrLn "Bernard: “At first I didn't know when Cheryl's birthday is, but now I do!”"
-  else if a == AK
-  then putStrLn "Albert: “Now I know when Cheryl's birthday is.”"
-  else putStrLn "ERROR: Dialogue not found"
+mono :: Dialogue -> IO ()
+mono a = putStrLn $ case a of
+  AKn -> "Albert: “I don't know when Cheryl's birthday is.”"
+  BKn -> "Bernard “I don't know when Cheryl's birthday is.”"
+  AKB -> "Albert: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
+  BKA -> "Bernard: “I don't know when Cheryl's birthday is, but I know that you don't know either.”"
+  BAK -> "Bernard: “At first I didn't know when Cheryl's birthday is, but now I do!”\nAlbert: “Now I know when Cheryl's birthday is.”"
+  ABK -> "Albert: “At first I didn't know when Cheryl's birthday is, but now I do!”\nBernard: “Now I know when Cheryl's birthday is.”"
+
+dia :: [Dialogue] -> IO()
+dia [] = return()
+dia (x:xs) = do mono x 
+                dia xs
+
+
+-- Excute updates
+
+data Updates = UABKn | UAKn | UBKn | UAKB | UBKA | UAK | UBK deriving (Eq,Ord,Show) 
+
+kup :: KripkeModelS5 -> Updates -> KripkeModelS5
+kup k a  = case a of 
+    UABKn -> k `update` Conj [albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k)]
+    UAKn -> k `update` albertDoesNotKnow (vocabOf k)
+    UBKn -> k `update` bernardDoesNotKnow (vocabOf k)
+    UAKB -> k `update` Conj [albertDoesNotKnow (vocabOf k), albertKwBernard (vocabOf k)]
+    UBKA -> k `update` Conj [bernardDoesNotKnow (vocabOf k), bernardKwAlbert (vocabOf k)]
+    UAK -> k `update` albertKnows (vocabOf k)
+    UBK -> k `update` bernardKnows (vocabOf k)
+
+
+kups :: KripkeModelS5 -> [Updates] -> KripkeModelS5
+kups k [] = k
+kups k (x:xs) = do let n = kup k x
+                   kups n xs
 
 
 -- Guess solution
@@ -152,6 +168,7 @@ tryAgain = do
     "y" -> return True
     "n" -> return False
     _ -> tryAgain
+
 
 -- Updates
 
