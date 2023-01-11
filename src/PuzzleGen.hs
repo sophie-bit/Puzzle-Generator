@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 module PuzzleGenE where
 
 import Test.QuickCheck
@@ -10,7 +11,9 @@ import Data.List (groupBy, sortBy, sort)
 import SMCDEL.Internal.Help (apply)
 import Text.Read(readMaybe)
 
-newtype PuzzleKrMS5 = Puzzle2 KripkeModelS5 deriving (Eq,Ord,Show)
+newtype PuzzleKrMS5 = Puzzle KripkeModelS5 deriving (Eq,Ord,Show)
+
+data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
 
 instance Arbitrary PuzzleKrMS5 where
   arbitrary = myArbitrary Easy
@@ -18,21 +21,21 @@ instance Arbitrary PuzzleKrMS5 where
 -- Gen KripkeModel
 myArbitrary :: Difficulty -> Gen PuzzleKrMS5
 myArbitrary diff = do
-    mon <- if diff == Easy 
+    mon <- if diff == Easy
             then chooseInt(2,3)
            else if diff == Medium
             then  chooseInt(4,6)
-           else chooseInt(7,12)      
-    day <- if diff == Easy 
+           else chooseInt(7,12)
+    day <- if diff == Easy
             then chooseInt(2,3)
            else if diff == Medium
             then  chooseInt(4,6)
-           else chooseInt(7,16)   
-    dat <- if diff == Easy 
+           else chooseInt(7,16)
+    dat <- if diff == Easy
             then chooseInt(2, mon*day)
            else if diff == Medium
             then  chooseInt(7,mon*day)
-           else chooseInt(12, mon*day)   
+           else chooseInt(12, mon*day)
 
     -- Choose specific months
     allMonths <- shuffle [1..12]
@@ -50,44 +53,44 @@ myArbitrary diff = do
     let worlds = map fst dates
     let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- myVocabulary ])) dates
     let parts = [("Albert", datesM), ("Bernard", datesD)]
-    return $ Puzzle2 $ KrMS5 worlds parts val
+    return $ Puzzle $ KrMS5 worlds parts val
 
 
 run :: Difficulty -> IO ()
 run diff = do
   -- Generate KrMS5 with solution
-  (k, p, posB, sol) <- tryFindSol diff 
+  (k, p, posB, sol, d) <- tryFindSol diff
   -- Dialogue
   intro p posB
-  if p < 7
-    then dia [AKn, BAK]
-  else dia [AKB, BAK]
+  dia d
   disp k
   -- let player guess
   _ <- tryToGuess sol
   putStrLn "Thank you for playing :)"
 
 
-data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
-
   -- Find KrMS5 with solution
 
-tryFindSol :: Difficulty -> IO (KripkeModelS5, Int, [[Int]], [[Int]])
+tryFindSol :: Difficulty -> IO (KripkeModelS5, Int, [[Int]], [[Int]], [Dialogue])
 tryFindSol diff = do
     -- Generate random KrMS5
-    Puzzle2 k <- generate (myArbitrary diff)
+    Puzzle k <- generate (myArbitrary diff)
     -- Possible birthdays 
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)
     let p = length posB
 
-    let nK = if p < 7 
-              then kups k [UABKn, UBK, UAK]
-             else kups k [UAKB, UBK, UAK]
+    -- let nK = if p < 7 
+    --           then kups k [UABKn, UBK, UAK]
+    --          else kups k [UAKB, UBK, UAK]
 
-    -- Check if there is 1 solution
+    -- let num = getNum diff
+    let (u, d) = genUD
+
+    let nK = kups k u
+     -- Check if there is 1 solution
     let sol = map (map fromEnum . truthsInAt nK) (worldsOf nK)
     if length sol == 1
-      then return (k, p, posB, sol)
+      then return (k, p, posB, sol, d)
     else tryFindSol diff
 
 
@@ -113,16 +116,16 @@ mono a = putStrLn $ case a of
 
 dia :: [Dialogue] -> IO()
 dia [] = return()
-dia (x:xs) = do mono x 
+dia (x:xs) = do mono x
                 dia xs
 
 
 -- Excute updates
 
-data Updates = UABKn | UAKn | UBKn | UAKB | UBKA | UAK | UBK deriving (Eq,Ord,Show) 
+data Updates = UABKn | UAKn | UBKn | UAKB | UBKA | UAK | UBK deriving (Eq,Ord,Show)
 
 kup :: KripkeModelS5 -> Updates -> KripkeModelS5
-kup k a  = case a of 
+kup k a  = case a of
     UABKn -> k `update` Conj [albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k)]
     UAKn -> k `update` albertDoesNotKnow (vocabOf k)
     UBKn -> k `update` bernardDoesNotKnow (vocabOf k)
@@ -131,13 +134,25 @@ kup k a  = case a of
     UAK -> k `update` albertKnows (vocabOf k)
     UBK -> k `update` bernardKnows (vocabOf k)
 
-
 kups :: KripkeModelS5 -> [Updates] -> KripkeModelS5
 kups k [] = k
 kups k (x:xs) = do let n = kup k x
                    kups n xs
 
-
+genUD :: ([Updates], [Dialogue])
+genUD = do 
+          let num = chooseInt(0,7)
+          case num of 
+            0 -> ([UABKn, UBK, UAK], [AKn, BAK])
+            1 -> ([UBKn, UAK, UBK], [BKn, ABK])
+            2 -> ([UAKB, UBK, UAK], [AKB, BAK])
+            3 -> ([UBKA, UAK, UBK], [BKA, ABK])
+            4 -> ([UAKB, UBKn, UAK, UBK], [AKn, BKn, ABK])
+            5 -> ([UAKB, UBKA, UAK, UBK], [AKn, BKA, ABK])
+            6 -> ([UBKA, UAKn, UBK, UAK], [BKn, AKn, BAK])
+            7 -> ([UBKA, UAKB, UBK, UAK], [BKn, AKB, BAK])
+            _ -> ([],[])
+  
 -- Guess solution
 
 tryToGuess :: [[Int]] -> IO Bool
