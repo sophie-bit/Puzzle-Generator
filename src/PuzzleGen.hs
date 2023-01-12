@@ -14,13 +14,15 @@ newtype PuzzleKrMS5 = Puzzle KripkeModelS5 deriving (Eq,Ord,Show)
 
 data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
 
--- instance Arbitrary PuzzleKrMS5 where
---   arbitrary num = myArbitrary Easy
-
 -- Gen KripkeModel
 myArbitrary :: Difficulty -> Gen (PuzzleKrMS5, Int)
-myArbitrary diff = do
-    num <- chooseInt(0,7)
+myArbitrary diff = do 
+    -- Choose parameters based on diff
+    num <- if diff == Easy            -- num to decide dialogue/updates
+            then chooseInt(0,1)
+           else if diff == Medium 
+            then chooseInt(2,3)
+           else chooseInt(2,7)
     mon <- if diff == Easy
             then chooseInt(2,3)
            else if diff == Medium
@@ -53,49 +55,34 @@ myArbitrary diff = do
     let worlds = map fst dates
     let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- myVocabulary ])) dates
     let parts = [("Albert", datesM), ("Bernard", datesD)]
-    return (( Puzzle $ KrMS5 worlds parts val), num)
+    return (Puzzle $ KrMS5 worlds parts val, num)
 
 
 run :: Difficulty -> IO ()
 run diff = do
-  -- Generate KrMS5 with solution
-  (k, p, posB, sol, d) <- tryFindSol diff
-  -- Dialogue
-  intro p posB
+  (k, p, posB, sol, d) <- tryFindSol diff     -- Generate KrMS5 with solution
+  intro p posB                                -- Print Dialogue
   dia d
-  disp k
-  -- let player guess
-  _ <- tryToGuess sol
+  disp k                                      -- display KrMS5
+  _ <- tryToGuess sol                         -- let player guess
   putStrLn "Thank you for playing :)"
 
 
-  -- Find KrMS5 with solution
-
+-- Find KrMS5 with solution
 tryFindSol :: Difficulty -> IO (KripkeModelS5, Int, [[Int]], [[Int]], [Dialogue])
 tryFindSol diff = do
-    -- Generate random KrMS5
-    (Puzzle k, num) <- generate (myArbitrary diff)
-    -- Possible birthdays 
-    let posB = map (map fromEnum . truthsInAt k) (worldsOf k)
+    (Puzzle k, num) <- generate (myArbitrary diff)                -- Generate random KrMS5
+    let posB = map (map fromEnum . truthsInAt k) (worldsOf k)     -- Possible birthdays 
     let p = length posB
-
-    -- let nK = if p < 7 
-    --           then kups k [UABKn, UBK, UAK]
-    --          else kups k [UAKB, UBK, UAK]
-
-    -- let num = getNum diff
-    let (u, d) = genUD num
-
-    let nK = kups k u
-     -- Check if there is 1 solution
+    let (u, d) = genUD num                                        -- Get matching dialogue and updates
+    let nK = ups k u                                              -- Execute updates
     let sol = map (map fromEnum . truthsInAt nK) (worldsOf nK)
-    if length sol == 1
+    if length sol == 1                                            -- Check if there is 1 solution
       then return (k, p, posB, sol, d)
     else tryFindSol diff
 
 
 -- Dialogue 
-
 intro :: Int -> [[Int]] -> IO ()
 intro p v = do
   putStrLn "Cheryl's Birthday"
@@ -116,16 +103,16 @@ mono a = putStrLn $ case a of
 
 dia :: [Dialogue] -> IO()
 dia [] = return()
-dia (x:xs) = do mono x
-                dia xs
+dia (x:xs) = do 
+          mono x
+          dia xs
 
 
 -- Excute updates
-
 data Updates = UABKn | UAKn | UBKn | UAKB | UBKA | UAK | UBK deriving (Eq,Ord,Show)
 
-kup :: KripkeModelS5 -> Updates -> KripkeModelS5
-kup k a  = case a of
+up :: KripkeModelS5 -> Updates -> KripkeModelS5
+up k a  = case a of
     UABKn -> k `update` Conj [albertDoesNotKnow (vocabOf k), bernardDoesNotKnow (vocabOf k)]
     UAKn -> k `update` albertDoesNotKnow (vocabOf k)
     UBKn -> k `update` bernardDoesNotKnow (vocabOf k)
@@ -134,13 +121,14 @@ kup k a  = case a of
     UAK -> k `update` albertKnows (vocabOf k)
     UBK -> k `update` bernardKnows (vocabOf k)
 
-kups :: KripkeModelS5 -> [Updates] -> KripkeModelS5
-kups k [] = k
-kups k (x:xs) = do let n = kup k x
-                   kups n xs
+ups :: KripkeModelS5 -> [Updates] -> KripkeModelS5
+ups k [] = k
+ups k (x:xs) = do 
+            let n = up k x
+            ups n xs
 
 genUD :: Int -> ([Updates], [Dialogue])
-genUD num  = case num of 
+genUD num  = case num of
             0 -> ([UABKn, UBK, UAK], [AKn, BAK])
             1 -> ([UBKn, UAK, UBK], [BKn, ABK])
             2 -> ([UAKB, UBK, UAK], [AKB, BAK])
@@ -150,9 +138,9 @@ genUD num  = case num of
             6 -> ([UBKA, UAKn, UBK, UAK], [BKA, AKn, BAK])
             7 -> ([UBKA, UAKB, UBK, UAK], [BKA, AKB, BAK])
             _ -> ([],[])
-  
--- Guess solution
 
+
+-- Guess solution
 tryToGuess :: [[Int]] -> IO Bool
 tryToGuess s = do
   putStrLn "\nWhen is Cheryl's birthday?"
@@ -184,7 +172,6 @@ tryAgain = do
 
 
 -- Updates
-
 albertKnows :: [Prp] -> Form
 albertKnows ps = Conj [ Kw "Albert" (PrpF p) | p <- ps]
 
@@ -202,7 +189,6 @@ albertKwBernard ps = Conj [K "Albert" $ Neg (K "Bernard" (PrpF p)) | p <- ps, p 
 
 bernardKwAlbert :: [Prp] -> Form
 bernardKwAlbert ps = Conj [K "Bernard" $ Neg (K "Albert" (PrpF p)) | p <- ps, p > P 12 ]
-
 
 -- Get validations
 truthsInAt :: KripkeModelS5 -> World -> [Prp]
