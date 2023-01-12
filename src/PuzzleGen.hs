@@ -1,4 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
 module PuzzleGenE where
 
 import Test.QuickCheck
@@ -15,12 +14,13 @@ newtype PuzzleKrMS5 = Puzzle KripkeModelS5 deriving (Eq,Ord,Show)
 
 data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
 
-instance Arbitrary PuzzleKrMS5 where
-  arbitrary = myArbitrary Easy
+-- instance Arbitrary PuzzleKrMS5 where
+--   arbitrary num = myArbitrary Easy
 
 -- Gen KripkeModel
-myArbitrary :: Difficulty -> Gen PuzzleKrMS5
+myArbitrary :: Difficulty -> Gen (PuzzleKrMS5, Int)
 myArbitrary diff = do
+    num <- chooseInt(0,7)
     mon <- if diff == Easy
             then chooseInt(2,3)
            else if diff == Medium
@@ -53,7 +53,7 @@ myArbitrary diff = do
     let worlds = map fst dates
     let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- myVocabulary ])) dates
     let parts = [("Albert", datesM), ("Bernard", datesD)]
-    return $ Puzzle $ KrMS5 worlds parts val
+    return (( Puzzle $ KrMS5 worlds parts val), num)
 
 
 run :: Difficulty -> IO ()
@@ -74,7 +74,7 @@ run diff = do
 tryFindSol :: Difficulty -> IO (KripkeModelS5, Int, [[Int]], [[Int]], [Dialogue])
 tryFindSol diff = do
     -- Generate random KrMS5
-    Puzzle k <- generate (myArbitrary diff)
+    (Puzzle k, num) <- generate (myArbitrary diff)
     -- Possible birthdays 
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)
     let p = length posB
@@ -84,7 +84,7 @@ tryFindSol diff = do
     --          else kups k [UAKB, UBK, UAK]
 
     -- let num = getNum diff
-    let (u, d) = genUD
+    let (u, d) = genUD num
 
     let nK = kups k u
      -- Check if there is 1 solution
@@ -139,18 +139,16 @@ kups k [] = k
 kups k (x:xs) = do let n = kup k x
                    kups n xs
 
-genUD :: ([Updates], [Dialogue])
-genUD = do 
-          let num = chooseInt(0,7)
-          case num of 
+genUD :: Int -> ([Updates], [Dialogue])
+genUD num  = case num of 
             0 -> ([UABKn, UBK, UAK], [AKn, BAK])
             1 -> ([UBKn, UAK, UBK], [BKn, ABK])
             2 -> ([UAKB, UBK, UAK], [AKB, BAK])
             3 -> ([UBKA, UAK, UBK], [BKA, ABK])
-            4 -> ([UAKB, UBKn, UAK, UBK], [AKn, BKn, ABK])
-            5 -> ([UAKB, UBKA, UAK, UBK], [AKn, BKA, ABK])
-            6 -> ([UBKA, UAKn, UBK, UAK], [BKn, AKn, BAK])
-            7 -> ([UBKA, UAKB, UBK, UAK], [BKn, AKB, BAK])
+            4 -> ([UAKB, UBKn, UAK, UBK], [AKB, BKn, ABK])
+            5 -> ([UAKB, UBKA, UAK, UBK], [AKB, BKA, ABK])
+            6 -> ([UBKA, UAKn, UBK, UAK], [BKA, AKn, BAK])
+            7 -> ([UBKA, UAKB, UBK, UAK], [BKA, AKB, BAK])
             _ -> ([],[])
   
 -- Guess solution
