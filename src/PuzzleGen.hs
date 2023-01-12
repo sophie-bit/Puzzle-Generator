@@ -130,7 +130,7 @@ ups k (x:xs) = do
 genUD :: Int -> ([Updates], [Dialogue])
 genUD num  = case num of
             0 -> ([UABKn, UBK, UAK], [AKn, BAK])
-            1 -> ([UBKn, UAK, UBK], [BKn, ABK])
+            1 -> ([UABKn, UAK, UBK], [BKn, ABK])
             2 -> ([UAKB, UBK, UAK], [AKB, BAK])
             3 -> ([UBKA, UAK, UBK], [BKA, ABK])
             4 -> ([UAKB, UBKn, UAK, UBK], [AKB, BKn, ABK])
