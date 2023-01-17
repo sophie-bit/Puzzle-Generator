@@ -1,4 +1,4 @@
-module PuzzleGenE where
+module PuzzleGen where
 
 import Test.QuickCheck
     -- ( generate, shuffle, Arbitrary(arbitrary), Gen, chooseInt )
@@ -37,7 +37,7 @@ myArbitrary diff = do
             then chooseInt(2, mon*day)
            else if diff == Medium
             then  chooseInt(7,mon*day)
-           else chooseInt(12, mon*day)
+           else chooseInt(15, mon*day)
 
     -- Choose specific months
     allMonths <- shuffle [1..12]
@@ -85,7 +85,7 @@ tryFindSol diff = do
 -- Dialogue 
 intro :: Int -> [[Int]] -> IO ()
 intro p v = do
-  putStrLn "Cheryl's Birthday"
+  putStrLn "\nCheryl's Birthday"
   putStrLn $ "\nAlbert and Bernard just became friends with Cheryl, and they want to know when her birthday is. Cheryl gives them a list of " ++ show p ++ " possible dates for her birthday:"
   putStrLn $ unwords . map show $ sort v
   putStrLn "\nCheryl then tells only to Albert the month of her birthday, and tells only to Bernard the day of her birthday. (And Albert and Bernard are aware that she did so.) Albert and Bernard now have the following conversation:\n"
@@ -173,10 +173,10 @@ tryAgain = do
 
 -- Updates
 albertKnows :: [Prp] -> Form
-albertKnows ps = Conj [ Kw "Albert" (PrpF p) | p <- ps]
+albertKnows ps = Disj [ K "Albert" (PrpF p) | p <- ps]
 
 bernardKnows :: [Prp] -> Form
-bernardKnows ps = Conj [ Kw "Bernard" (PrpF p) | p <- ps]
+bernardKnows ps = Disj [ K "Bernard" (PrpF p) | p <- ps]
 
 albertDoesNotKnow :: [Prp] -> Form
 albertDoesNotKnow ps = Conj [ Neg (K "Albert" (PrpF p)) | p <- ps, p > P 12 ]
