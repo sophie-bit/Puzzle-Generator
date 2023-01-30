@@ -9,6 +9,9 @@ import SMCDEL.Explicit.S5 ( KripkeModelS5(..), World, worldsOf)  --world, worldO
 import Data.List (groupBy, sortBy, sort)
 import SMCDEL.Internal.Help (apply)
 import Text.Read(readMaybe)
+-- import System.Console.Haskeline
+
+-- _ <- hSetBuffering stdin NoBuffering
 
 newtype PuzzleKrMS5 = Puzzle KripkeModelS5 deriving (Eq,Ord,Show)
 
@@ -16,13 +19,13 @@ data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
 
 -- Gen KripkeModel
 myArbitrary :: Difficulty -> Gen (PuzzleKrMS5, Int)
-myArbitrary diff = do 
+myArbitrary diff = do
     -- Choose parameters based on diff
     num <- if diff == Easy            -- num to decide dialogue/updates
             then chooseInt(0,1)
-           else if diff == Medium 
+           else if diff == Medium
             then chooseInt(2,3)
-           else chooseInt(2,7)
+           else chooseInt(4,7)
     mon <- if diff == Easy
             then chooseInt(2,3)
            else if diff == Medium
@@ -34,10 +37,10 @@ myArbitrary diff = do
             then  chooseInt(4,6)
            else chooseInt(7,16)
     dat <- if diff == Easy
-            then chooseInt(2, mon*day)
+            then chooseInt(3, 6)
            else if diff == Medium
-            then  chooseInt(7,mon*day)
-           else chooseInt(15, mon*day)
+            then  chooseInt(7,15)
+           else chooseInt(15, 30)
 
     -- Choose specific months
     allMonths <- shuffle [1..12]
@@ -61,10 +64,12 @@ myArbitrary diff = do
 run :: Difficulty -> IO ()
 run diff = do
   (k, p, posB, sol, d) <- tryFindSol diff     -- Generate KrMS5 with solution
+  -- print k
   intro p posB                                -- Print Dialogue
   dia d
-  disp k                                      -- display KrMS5
-  _ <- tryToGuess sol                         -- let player guess
+  disp k
+  -- display k u
+  _ <- tryToGuess k sol                         -- let player guess
   putStrLn "Thank you for playing :)"
 
 
@@ -74,11 +79,12 @@ tryFindSol diff = do
     (Puzzle k, num) <- generate (myArbitrary diff)                -- Generate random KrMS5
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)     -- Possible birthdays 
     let p = length posB
-    let (u, d) = genUD num                                        -- Get matching dialogue and updates
-    let nK = ups k u                                              -- Execute updates
+    let (u, d) = genUD num                              -- Get matching dialogue and updates
+    let nK = ups k u diff                                  -- Execute updates
     let sol = map (map fromEnum . truthsInAt nK) (worldsOf nK)
     if length sol == 1                                            -- Check if there is 1 solution
-      then return (k, p, posB, sol, d)
+      then do
+        return (k, p, posB, sol, d)
     else tryFindSol diff
 
 
@@ -103,7 +109,7 @@ mono a = putStrLn $ case a of
 
 dia :: [Dialogue] -> IO()
 dia [] = return()
-dia (x:xs) = do 
+dia (x:xs) = do
           mono x
           dia xs
 
@@ -121,11 +127,28 @@ up k a  = case a of
     UAK -> k `update` albertKnows (vocabOf k)
     UBK -> k `update` bernardKnows (vocabOf k)
 
-ups :: KripkeModelS5 -> [Updates] -> KripkeModelS5
-ups k [] = k
-ups k (x:xs) = do 
+ups :: KripkeModelS5 -> [Updates] -> Difficulty -> KripkeModelS5
+ups k [] _ = k
+ups k (x:xs) diff = do
             let n = up k x
-            ups n xs
+            if diff == Easy
+              then ups n xs diff
+            else do 
+              if null xs
+                then ups n xs diff
+              else do
+                let sol = map (map fromEnum . truthsInAt n) (worldsOf n)
+                if length sol == 1   
+                  then k
+                else ups n xs diff
+
+display :: KripkeModelS5 -> [Updates] -> IO ()
+display _ [] = return ()
+display k (x:xs) = do
+                    let n = up k x
+                    disp n
+                    display n xs
+
 
 genUD :: Int -> ([Updates], [Dialogue])
 genUD num  = case num of
@@ -141,14 +164,14 @@ genUD num  = case num of
 
 
 -- Guess solution
-tryToGuess :: [[Int]] -> IO Bool
-tryToGuess s = do
+tryToGuess :: KripkeModelS5 -> [[Int]] -> IO Bool
+tryToGuess k s = do
   putStrLn "\nWhen is Cheryl's birthday?"
   input <- getLine
   case readMaybe input of
     Nothing -> do
       putStrLn "Please use the following format: [m,d]"
-      tryToGuess s
+      tryToGuess k s
     Just n -> do
       if n == head s
         then do putStrLn "Correct!"
@@ -156,7 +179,9 @@ tryToGuess s = do
         else do putStrLn "Incorrect. Do you want to try again?"
                 a <- tryAgain
                 if a
-                then tryToGuess s
+                then do 
+                  disp k
+                  tryToGuess k s
                 else do
                   putStrLn $ "The correct answer is: " ++ show (head s)
                   return False
@@ -173,10 +198,10 @@ tryAgain = do
 
 -- Updates
 albertKnows :: [Prp] -> Form
-albertKnows ps = Disj [ K "Albert" (PrpF p) | p <- ps]
+albertKnows ps = Conj [ Kw "Albert" (PrpF p) | p <- ps]
 
 bernardKnows :: [Prp] -> Form
-bernardKnows ps = Disj [ K "Bernard" (PrpF p) | p <- ps]
+bernardKnows ps = Conj [ Kw "Bernard" (PrpF p) | p <- ps]
 
 albertDoesNotKnow :: [Prp] -> Form
 albertDoesNotKnow ps = Conj [ Neg (K "Albert" (PrpF p)) | p <- ps, p > P 12 ]
@@ -193,3 +218,28 @@ bernardKwAlbert ps = Conj [K "Bernard" $ Neg (K "Albert" (PrpF p)) | p <- ps, p 
 -- Get validations
 truthsInAt :: KripkeModelS5 -> World -> [Prp]
 truthsInAt m@(KrMS5 _ _ val) w = filter (apply $ apply val w)(vocabOf m)
+
+makeOwn :: [(Prp,Prp)] -> [Prp]->  IO KripkeModelS5
+makeOwn posDates vocab = do
+    -- let vocab = zip P vocabB
+    let dates = zip [1..] posDates
+    let datesM = map (map fst) $ groupBy (\ (_,(m1,_)) (_,(m2,_)) -> m1 == m2) $ sortBy (\ (_,(m1,_)) (_,(m2,_)) -> compare m1 m2) dates
+    let datesD = map (map fst) $ groupBy (\ (_,(_,d1)) (_,(_,d2)) -> d1 == d2) $ sortBy (\ (_,(_,d1)) (_,(_,d2)) -> compare d1 d2) dates
+
+    let worlds = map fst dates
+    let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- vocab ])) dates
+    let parts = [("Albert", datesM), ("Bernard", datesD)]
+    let k = KrMS5 worlds parts val
+    return k
+
+cheryl :: IO ()
+cheryl = do
+  let k = KrMS5 [1,2,3,4,5,6,7,8,9,10] [("Albert",[[1,2,3],[4,5],[6,7],[8,9,10]]),("Bernard",[[6,8],[1,9],[2,7],[4,10],[5],[3]])] [(1,[(P 5,True),(P 6,False),(P 7,False),(P 8,False),(P 14,False),(P 15,True),(P 16,False),(P 17,False),(P 18,False),(P 19,False)]),(2,[(P 5,True),(P 6,False),(P 7,False),(P 8,False),(P 14,False),(P 15,False),(P 16,True),(P 17,False),(P 18,False),(P 19,False)]),(3,[(P 5,True),(P 6,False),(P 7,False),(P 8,False),(P 14,False),(P 15,False),(P 16,False),(P 17,False),(P 18,False),(P 19,True)]),(4,[(P 5,False),(P 6,True),(P 7,False),(P 8,False),(P 14,False),(P 15,False),(P 16,False),(P 17,True),(P 18,False),(P 19,False)]),(5,[(P 4,False),(P 5,False),(P 6,True),(P 7,False),(P 8,False),(P 14,False),(P 15,False),(P 16,False),(P 17,False),(P 18,True),(P 19,False)]),(6,[(P 4,False),(P 5,False),(P 6,False),(P 7,True),(P 8,False),(P 14,True),(P 15,False),(P 16,False),(P 17,False),(P 18,False),(P 19,False)]),(7,[(P 5,False),(P 6,False),(P 7,True),(P 8,False),(P 14,False),(P 15,False),(P 16,True),(P 17,False),(P 18,False),(P 19,False)]),(8,[(P 5,False),(P 6,False),(P 7,False),(P 8,True),(P 14,True),(P 15,False),(P 16,False),(P 17,False),(P 18,False),(P 19,False)]),(9,[(P 5,False),(P 6,False),(P 7,False),(P 8,True),(P 14,False),(P 15,True),(P 16,False),(P 17,False),(P 18,False),(P 19,False)]),(10,[(P 5,False),(P 6,False),(P 7,False),(P 8,True),(P 14,False),(P 15,False),(P 16,False),(P 17,True),(P 18,False),(P 19,False)])]
+  disp k
+  let fK = up k UAKB
+  disp fK
+  let sK = up fK UBK
+  disp sK
+  let tK = up sK UAK
+  disp tK
+

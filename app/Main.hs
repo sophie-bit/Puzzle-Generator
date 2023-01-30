@@ -3,7 +3,8 @@ import PuzzleGen
 
 main :: IO ()
 main = do
-    putStrLn "Welcome to the Cheryl's Birthday puzzle generator!\nDo you want ane Easy, Medium or Hard puzzle?"
+    -- hSetBuffering stdin NoBuffering
+    putStrLn "\nWelcome to the Cheryl's Birthday puzzle generator!\nDo you want an Easy, Medium or Hard puzzle?"
     diff <- getDiff 
     run diff
     
