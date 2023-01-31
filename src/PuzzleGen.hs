@@ -1,18 +1,13 @@
 module PuzzleGen where
 
 import Test.QuickCheck
-    -- ( generate, shuffle, Arbitrary(arbitrary), Gen, chooseInt )
 
 import SMCDEL.Language
 import SMCDEL.Internal.TexDisplay
-import SMCDEL.Explicit.S5 ( KripkeModelS5(..), World, worldsOf)  --world, worldOf)
+import SMCDEL.Explicit.S5 ( KripkeModelS5(..), World, worldsOf)  
 import Data.List (groupBy, sortBy, sort)
 import SMCDEL.Internal.Help (apply)
 import Text.Read(readMaybe)
--- import System.Console.Haskeline
-
--- _ <- hSetBuffering stdin NoBuffering
-
 newtype PuzzleKrMS5 = Puzzle KripkeModelS5 deriving (Eq,Ord,Show)
 
 data Difficulty = Easy | Medium | Hard deriving (Eq,Ord,Show)
@@ -55,6 +50,7 @@ myArbitrary diff = do
     let datesM = map (map fst) $ groupBy (\ (_,(m1,_)) (_,(m2,_)) -> m1 == m2) $ sortBy (\ (_,(m1,_)) (_,(m2,_)) -> compare m1 m2) dates
     let datesD = map (map fst) $ groupBy (\ (_,(_,d1)) (_,(_,d2)) -> d1 == d2) $ sortBy (\ (_,(_,d1)) (_,(_,d2)) -> compare d1 d2) dates
 
+    -- Construct Kripke Model 
     let worlds = map fst dates
     let val = map (\(w,(d,m)) ->  (w,[(p, p ==d || p==m) | p <- myVocabulary ])) dates
     let parts = [("Albert", datesM), ("Bernard", datesD)]
@@ -64,11 +60,9 @@ myArbitrary diff = do
 run :: Difficulty -> IO ()
 run diff = do
   (k, p, posB, sol, d) <- tryFindSol diff     -- Generate KrMS5 with solution
-  -- print k
   intro p posB                                -- Print Dialogue
   dia d
   disp k
-  -- display k u
   _ <- tryToGuess k sol                         -- let player guess
   putStrLn "Thank you for playing :)"
 
@@ -79,13 +73,13 @@ tryFindSol diff = do
     (Puzzle k, num) <- generate (myArbitrary diff)                -- Generate random KrMS5
     let posB = map (map fromEnum . truthsInAt k) (worldsOf k)     -- Possible birthdays 
     let p = length posB
-    let (u, d) = genUD num                              -- Get matching dialogue and updates
-    let nK = ups k u diff                                  -- Execute updates
+    let (u, d) = genUD num                                        -- Get matching dialogue and updates
+    let nK = ups k u diff                                         -- Execute updates
     let sol = map (map fromEnum . truthsInAt nK) (worldsOf nK)
     if length sol == 1                                            -- Check if there is 1 solution
       then do
         return (k, p, posB, sol, d)
-    else tryFindSol diff
+    else tryFindSol diff                                          -- Else try agian
 
 
 -- Dialogue 
