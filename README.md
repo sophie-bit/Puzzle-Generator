@@ -1,7 +1,7 @@
 # Puzzle Generator
 
 This puzzle generators generates new variations of Cheryl's Birthday.  With the puzzle generator puzzles of all difficulty levels are available for everyone. 
-## Installation
+## Dependencies
 
 The puzzle generator uses SMCDEL as a liberary. How to install SMCDEL can be found [here](https://github.com/jrclogic/SMCDEL).
 
